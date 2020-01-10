@@ -1,7 +1,7 @@
 version: "3"
- 
+
 services:
- 
+
     nginx:
         image: nginx
         volumes:
@@ -11,7 +11,7 @@ services:
             - backend
         ports:
             - "80:80"
- 
+
     apache:
         build: ./docker/apache
         volumes:
@@ -19,32 +19,36 @@ services:
             - ./docker/apache/php.ini:/usr/local/etc/php/php.ini
         networks:
             - backend
- 
+
     db:
         image: "mysql:5.7"
         volumes:
             - ./docker/db:/var/lib/mysql
         environment:
-               MYSQL_ROOT_PASSWORD: root
-               MYSQL_DATABASE: local
-               MYSQL_USER: local
-               MYSQL_PASSWORD: local
+                MYSQL_ROOT_PASSWORD: root
+                MYSQL_DATABASE: local
+                MYSQL_USER: local
+                MYSQL_PASSWORD: local
         networks:
-            - backend
- 
+              backend:
+                   ipv4_address: 172.20.0.4
     phpmyadmin:
         image: phpmyadmin/phpmyadmin:latest
         environment:
             - PMA_HOST=db
-            - PMA_USER=local
-            - PMA_PASSWORD=local
+            - PMA_USER=root
+            - PMA_PASSWORD=root
         volumes:
             - /sessions
         networks:
             - backend
- 
+
 networks:
     front:
         external:
             name: front
     backend:
+        ipam:
+           driver: default
+           config:
+            - subnet: 172.20.0.0/16
