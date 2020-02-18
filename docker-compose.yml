@@ -1,54 +1,78 @@
-version: "3"
+version: "3.7"
 
 services:
 
     nginx:
         image: nginx
         environment:
-              TZ: Europe/Moscow
+            TZ: Europe/Moscow
         volumes:
-            - ./docker/nginx/:/etc/nginx/conf.d/
+            - './docker/nginx/:/etc/nginx/conf.d/'
+            - './docker/nginx/logs:/var/log/nginx/'
         networks:
             - front
             - backend
         ports:
-            - "80:80"
+            - '80:80'
 
     apache:
         build: ./docker/apache
         environment:
-              TZ: Europe/Moscow
+            TZ: Europe/Moscow
         volumes:
-            - ./:/var/www/
-            - ./docker/apache/php.ini:/usr/local/etc/php/php.ini
+            - './:/var/www/'
+            - './docker/apache/php.ini:/usr/local/etc/php/php.ini'
         networks:
             - backend
 
     db:
         image: mysql:5.7
         volumes:
-            - ./docker/db:/var/lib/mysql
-            - ./docker/db/logs:/var/log/mysql"
+            - './docker/db:/var/lib/mysql'
+            - './docker/db/logs:/var/log/mysql'
         restart: unless-stopped
         environment:
-              TZ: Europe/Moscow
-              MYSQL_ROOT_PASSWORD: root
-              MYSQL_DATABASE: local
-              MYSQL_USER: local
-              MYSQL_PASSWORD: local
+            TZ: Europe/Moscow
+            MYSQL_ROOT_PASSWORD: root
+            MYSQL_DATABASE: local
+            MYSQL_USER: local
+            MYSQL_PASSWORD: local
         networks:
-              backend:
-                   ipv4_address: 172.20.0.4
+            backend:
+                ipv4_address: 172.20.0.4
+
     phpmyadmin:
         image: phpmyadmin/phpmyadmin:latest
         environment:
-            - PMA_HOST=db
-            - PMA_USER=root
-            - PMA_PASSWORD=root
+                - PMA_HOST=db
+                - PMA_USER=root
+                - PMA_PASSWORD=root
         volumes:
             - /sessions
         networks:
             - backend
+
+    gitlab:
+        image: gitlab/gitlab-ce:latest
+        restart: always
+        hostname: 'gitlab.example.com'
+        environment:
+            TZ: Europe/Moscow
+            GITLAB_OMNIBUS_CONFIG: |
+                external_url 'https://gitlab.example.com'
+                registry_nginx['enable'] = false
+                
+        volumes:
+            - './docker/gitlab/config:/etc/gitlab'
+            - './docker/gitlab/logs:/var/log/gitlab'
+            - './docker/gitlab/data:/var/opt/gitlab'
+        networks:
+            backend:
+                ipv4_address: 172.20.0.5
+        ports: 
+            - '8080:80'
+            - '443:443'
+            - '2022:22'
 
 networks:
     front:
@@ -56,6 +80,6 @@ networks:
             name: front
     backend:
         ipam:
-           driver: default
-           config:
-            - subnet: 172.20.0.0/16
+            driver: default
+            config:
+                - subnet: 172.20.0.0/16
